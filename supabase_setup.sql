@@ -81,3 +81,15 @@ CREATE INDEX IF NOT EXISTS idx_stress_date         ON raw_garmin.stress         
 CREATE INDEX IF NOT EXISTS idx_activities_date     ON raw_garmin.activities     (activity_date DESC);
 CREATE INDEX IF NOT EXISTS idx_steps_date          ON raw_garmin.steps          (steps_date DESC);
 CREATE INDEX IF NOT EXISTS idx_weight_date         ON raw_manual.weight         (weigh_date DESC);
+
+SELECT schemaname, tablename 
+FROM pg_tables 
+WHERE schemaname IN ('raw_garmin', 'raw_manual')
+ORDER BY schemaname, tablename;
+
+CREATE SCHEMA IF NOT EXISTS dbt_dev;
+CREATE SCHEMA IF NOT EXISTS dbt_prod;
+
+-- Verify all 4
+SELECT schema_name FROM information_schema.schemata 
+WHERE schema_name IN ('raw_garmin', 'raw_manual', 'dbt_dev', 'dbt_prod');
