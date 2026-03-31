@@ -61,6 +61,14 @@ CREATE TABLE IF NOT EXISTS raw_garmin.steps (
     UNIQUE (steps_date)
 );
 
+CREATE TABLE IF NOT EXISTS raw_garmin.calories (
+    id             BIGSERIAL PRIMARY KEY,
+    calories_date  DATE        NOT NULL,
+    raw_data       JSONB       NOT NULL,
+    ingested_at    TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (calories_date)
+);
+
 -- ── Manual entry table ────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS raw_manual.weight (
@@ -80,6 +88,7 @@ CREATE INDEX IF NOT EXISTS idx_hr_date             ON raw_garmin.heart_rate     
 CREATE INDEX IF NOT EXISTS idx_stress_date         ON raw_garmin.stress         (stress_date DESC);
 CREATE INDEX IF NOT EXISTS idx_activities_date     ON raw_garmin.activities     (activity_date DESC);
 CREATE INDEX IF NOT EXISTS idx_steps_date          ON raw_garmin.steps          (steps_date DESC);
+CREATE INDEX IF NOT EXISTS idx_calories_date       ON raw_garmin.calories       (calories_date DESC);
 CREATE INDEX IF NOT EXISTS idx_weight_date         ON raw_manual.weight         (weigh_date DESC);
 
 SELECT schemaname, tablename 

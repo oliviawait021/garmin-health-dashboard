@@ -10,6 +10,7 @@ import StressChart from '@/components/StressChart';
 import WeightChart from '@/components/WeightChart';
 import ActivityLog from '@/components/ActivityLog';
 import WeightEntryForm from '@/components/WeightEntryForm';
+import CalorieCalculator from '@/components/CalorieCalculator';
 
 const DAYS = 30;
 
@@ -86,6 +87,11 @@ export default function Dashboard() {
           Failed to load data: {error}
         </div>
       )}
+
+      {/* Calorie calculator — always visible, no Supabase dependency */}
+      <section>
+        <CalorieCalculator today={latest} />
+      </section>
 
       {!loading && !error && (
         <>

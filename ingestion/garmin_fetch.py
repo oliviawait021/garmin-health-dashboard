@@ -79,6 +79,10 @@ def fetch_steps(client: Garmin, date_str: str) -> dict:
     return client.get_steps_data(date_str)
 
 
+def fetch_calories(client: Garmin, date_str: str) -> list[dict]:
+    return client.get_daily_calories_data(date_str)
+
+
 def fetch_activities(client: Garmin, date_str: str) -> list[dict]:
     return client.get_activities_by_date(date_str, date_str)
 
@@ -150,6 +154,19 @@ def upsert_steps(cur, date_str: str, data: dict) -> None:
     )
 
 
+def upsert_calories(cur, date_str: str, data: list) -> None:
+    cur.execute(
+        """
+        INSERT INTO raw_garmin.calories (calories_date, raw_data)
+        VALUES (%s, %s)
+        ON CONFLICT (calories_date) DO UPDATE
+            SET raw_data    = EXCLUDED.raw_data,
+                ingested_at = NOW()
+        """,
+        (date_str, json.dumps(data)),
+    )
+
+
 def upsert_activity(cur, activity: dict) -> None:
     activity_id = activity.get("activityId")
     activity_date = (activity.get("startTimeLocal") or "")[:10]
@@ -173,6 +190,7 @@ FETCHERS = [
     ("heart_rate",    fetch_heart_rate,    upsert_heart_rate),
     ("stress",        fetch_stress,        upsert_stress),
     ("steps",         fetch_steps,         upsert_steps),
+    ("calories",      fetch_calories,      upsert_calories),
 ]
 
 
