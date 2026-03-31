@@ -1,0 +1,159 @@
+version: 2
+
+# ── Staging ───────────────────────────────────────────────────────────────────
+
+models:
+  - name: stg_garmin__daily_summary
+    description: Cleaned daily activity summary from Garmin, one row per day.
+    columns:
+      - name: summary_date
+        description: Calendar date of the summary.
+        data_tests:
+          - unique
+          - not_null
+      - name: total_steps
+        description: Total steps recorded for the day.
+      - name: resting_heart_rate
+        description: Resting heart rate in bpm.
+
+  - name: stg_garmin__sleep
+    description: Nightly sleep data extracted from Garmin JSONB, one row per date.
+    columns:
+      - name: sleep_date
+        description: The morning date the sleep data is attributed to.
+        data_tests:
+          - unique
+          - not_null
+      - name: total_sleep_seconds
+        description: Total sleep duration in seconds.
+      - name: sleep_score
+        description: Garmin sleep score (0–100).
+
+  - name: stg_garmin__heart_rate
+    description: Daily heart rate summary from Garmin.
+    columns:
+      - name: hr_date
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_garmin__stress
+    description: Daily stress level data from Garmin.
+    columns:
+      - name: stress_date
+        data_tests:
+          - unique
+          - not_null
+      - name: avg_stress
+        description: Average stress level for the day (0–100).
+
+  - name: stg_garmin__steps
+    description: Daily step totals derived from the intraday steps series.
+    columns:
+      - name: steps_date
+        data_tests:
+          - unique
+          - not_null
+      - name: total_steps
+        description: Sum of all step counts for the day.
+
+  - name: stg_garmin__activities
+    description: Individual Garmin activities (runs, rides, walks, etc.).
+    columns:
+      - name: activity_id
+        description: Garmin's unique activity ID.
+        data_tests:
+          - unique
+          - not_null
+      - name: activity_type
+        description: Machine-readable activity type key from Garmin.
+        data_tests:
+          - accepted_values:
+              values:
+                - running
+                - cycling
+                - walking
+                - swimming
+                - strength_training
+                - hiking
+                - yoga
+                - elliptical
+                - indoor_cycling
+                - open_water_swimming
+                - trail_running
+                - indoor_running
+                - treadmill_running
+                - other
+      - name: activity_date
+        data_tests:
+          - not_null
+
+  - name: stg_manual__weight
+    description: Manual body-weight entries entered via the dashboard.
+    columns:
+      - name: weigh_date
+        data_tests:
+          - unique
+          - not_null
+      - name: weight_lbs
+        description: Body weight in pounds.
+        data_tests:
+          - not_null
+
+# ── Intermediate ──────────────────────────────────────────────────────────────
+
+  - name: int_daily_health_metrics
+    description: >
+      One row per day joining daily summary, sleep, heart rate, stress, and steps.
+    columns:
+      - name: metric_date
+        data_tests:
+          - unique
+          - not_null
+
+  - name: int_activity_details
+    description: Activities enriched with display labels and calculated fields.
+    columns:
+      - name: activity_id
+        data_tests:
+          - unique
+          - not_null
+
+# ── Marts ─────────────────────────────────────────────────────────────────────
+
+  - name: mart_daily_dashboard
+    description: >
+      Gold layer dashboard table — one row per day with all health metrics
+      and the most recent weight entry. This is the primary table for the frontend.
+    columns:
+      - name: metric_date
+        data_tests:
+          - unique
+          - not_null
+
+  - name: mart_weekly_trends
+    description: Weekly aggregations of all key health metrics.
+    columns:
+      - name: week_start
+        data_tests:
+          - unique
+          - not_null
+
+  - name: mart_weight_tracker
+    description: Weight entries with 7d/30d moving averages and WoW change.
+    columns:
+      - name: weigh_date
+        data_tests:
+          - unique
+          - not_null
+      - name: weight_lbs
+        data_tests:
+          - not_null
+
+  - name: mart_activity_summary
+    description: Recent 50 activities for the dashboard activity log.
+    columns:
+      - name: activity_id
+        data_tests:
+          - unique
+          - not_null

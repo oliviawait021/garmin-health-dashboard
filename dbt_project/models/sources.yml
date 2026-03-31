@@ -1,0 +1,44 @@
+version: 2
+
+sources:
+  - name: raw_garmin
+    database: postgres
+    schema: raw_garmin
+    description: Bronze layer — raw JSON responses from the Garmin Connect API.
+    tables:
+      - name: daily_summary
+        description: One row per day with the full daily activity summary payload.
+        columns:
+          - name: summary_date
+            description: The calendar date this summary covers.
+          - name: raw_data
+            description: Full JSON response from Garmin's stats endpoint.
+      - name: sleep
+        description: One row per night of sleep data.
+        columns:
+          - name: sleep_date
+            description: The date the sleep occurred (morning date).
+      - name: heart_rate
+        description: Intraday heart-rate readings, one row per date.
+      - name: stress
+        description: Intraday stress readings, one row per date.
+      - name: activities
+        description: One row per recorded activity (run, ride, walk, etc.).
+        columns:
+          - name: activity_id
+            description: Garmin's unique identifier for the activity.
+      - name: steps
+        description: Step data with intraday timestamps, one row per date.
+
+  - name: raw_manual
+    database: postgres
+    schema: raw_manual
+    description: Bronze layer — user-entered data from the dashboard.
+    tables:
+      - name: weight
+        description: Manual body-weight entries entered through the dashboard form.
+        columns:
+          - name: weigh_date
+            description: The date the measurement was taken.
+          - name: weight_lbs
+            description: Body weight in pounds.

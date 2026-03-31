@@ -1,0 +1,16 @@
+type_key,display_name,category
+running,Running,Cardio
+indoor_running,Indoor Running,Cardio
+treadmill_running,Treadmill Running,Cardio
+trail_running,Trail Running,Cardio
+cycling,Cycling,Cardio
+indoor_cycling,Indoor Cycling,Cardio
+walking,Walking,Cardio
+hiking,Hiking,Cardio
+swimming,Swimming,Cardio
+open_water_swimming,Open Water Swimming,Cardio
+elliptical,Elliptical,Cardio
+strength_training,Strength Training,Strength
+yoga,Yoga,Flexibility
+pilates,Pilates,Flexibility
+other,Other,Other

@@ -1,0 +1,59 @@
+name: Daily Garmin Sync
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # 7 AM UTC = midnight MST
+  workflow_dispatch: {}    # Allow manual trigger from the GitHub UI
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: ingestion/requirements.txt
+
+      - name: Install Python dependencies
+        run: pip install -r ingestion/requirements.txt
+
+      - name: Fetch Garmin data (yesterday)
+        working-directory: ingestion
+        env:
+          GARMIN_EMAIL:      ${{ secrets.GARMIN_EMAIL }}
+          GARMIN_PASSWORD:   ${{ secrets.GARMIN_PASSWORD }}
+          SUPABASE_DB_URL:   ${{ secrets.SUPABASE_DB_URL }}
+          GARMIN_TOKEN_PATH: /tmp/garmin_tokens
+        run: python garmin_fetch.py
+
+      - name: Install dbt
+        run: pip install dbt-core dbt-postgres
+
+      - name: Run dbt build (prod)
+        working-directory: dbt_project
+        env:
+          DBT_PROFILES_DIR: .
+          DBT_HOST:     ${{ secrets.DBT_HOST }}
+          DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
+        run: |
+          cat > profiles.yml <<EOF
+          garmin_health:
+            outputs:
+              prod:
+                type: postgres
+                host: $DBT_HOST
+                port: 5432
+                user: postgres
+                password: $DBT_PASSWORD
+                dbname: postgres
+                schema: dbt_prod
+                threads: 1
+            target: prod
+          EOF
+          dbt deps
+          dbt build --target prod
