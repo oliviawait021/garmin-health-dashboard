@@ -3,13 +3,11 @@ name: dbt CI
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'dbt_project/**'
 
 jobs:
-  dbt-test:
+  dbt-check:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -17,6 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: pip
 
       - name: Install dbt
         run: pip install dbt-core dbt-postgres
@@ -32,22 +31,55 @@ jobs:
             outputs:
               dev:
                 type: postgres
-                host: $DBT_HOST
+                host: ${DBT_HOST}
                 port: 5432
                 user: postgres
-                password: $DBT_PASSWORD
+                password: ${DBT_PASSWORD}
                 dbname: postgres
-                schema: dbt_dev
-                threads: 1
+                schema: dbt_ci
+                threads: 2
             target: dev
           EOF
 
       - name: dbt deps
         working-directory: dbt_project
+        env:
+          DBT_PROFILES_DIR: .
         run: dbt deps
 
-      - name: dbt build (dev)
+      - name: dbt compile (syntax check)
         working-directory: dbt_project
         env:
           DBT_PROFILES_DIR: .
-        run: dbt build --target dev
+        run: dbt compile
+
+      - name: dbt seed
+        working-directory: dbt_project
+        env:
+          DBT_PROFILES_DIR: .
+        run: dbt seed
+
+      - name: dbt run
+        working-directory: dbt_project
+        env:
+          DBT_PROFILES_DIR: .
+        run: dbt run
+
+      - name: dbt test
+        working-directory: dbt_project
+        env:
+          DBT_PROFILES_DIR: .
+        run: dbt test
+
+      - name: Cleanup CI schema
+        if: always()
+        working-directory: dbt_project
+        env:
+          DBT_PROFILES_DIR: .
+          PGPASSWORD: ${{ secrets.DBT_PASSWORD }}
+        run: |
+          psql -h ${{ secrets.DBT_HOST }} -U postgres -d postgres \
+            -c "DROP SCHEMA IF EXISTS dbt_ci CASCADE;" \
+            -c "DROP SCHEMA IF EXISTS dbt_ci_staging CASCADE;" \
+            -c "DROP SCHEMA IF EXISTS dbt_ci_intermediate CASCADE;" \
+            -c "DROP SCHEMA IF EXISTS dbt_ci_marts CASCADE;" || true
