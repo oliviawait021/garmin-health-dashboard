@@ -23,17 +23,17 @@ jobs:
       - name: Write profiles.yml
         working-directory: dbt_project
         env:
-          DBT_HOST:     ${{ secrets.DBT_HOST }}
-          DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
+          DBT_POOLER_HOST: ${{ secrets.DBT_POOLER_HOST }}
+          DBT_PASSWORD:    ${{ secrets.DBT_PASSWORD }}
         run: |
           cat > profiles.yml <<EOF
           garmin_health:
             outputs:
               prod:
                 type: postgres
-                host: ${DBT_HOST}
-                port: 5432
-                user: postgres
+                host: ${DBT_POOLER_HOST}
+                port: 6543
+                user: postgres.zyfsiqpgscyqfstajlfm
                 password: ${DBT_PASSWORD}
                 dbname: postgres
                 schema: dbt_prod
