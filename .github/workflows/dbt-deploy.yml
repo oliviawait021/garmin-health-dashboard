@@ -1,0 +1,66 @@
+name: dbt Deploy (prod)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dbt
+        run: pip install dbt-core dbt-postgres
+
+      - name: Write profiles.yml
+        working-directory: dbt_project
+        env:
+          DBT_HOST:     ${{ secrets.DBT_HOST }}
+          DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
+        run: |
+          cat > profiles.yml <<EOF
+          garmin_health:
+            outputs:
+              prod:
+                type: postgres
+                host: ${DBT_HOST}
+                port: 5432
+                user: postgres
+                password: ${DBT_PASSWORD}
+                dbname: postgres
+                schema: dbt_prod
+                threads: 2
+            target: prod
+          EOF
+
+      - name: dbt deps
+        working-directory: dbt_project
+        env:
+          DBT_PROFILES_DIR: .
+        run: dbt deps
+
+      - name: dbt seed
+        working-directory: dbt_project
+        env:
+          DBT_PROFILES_DIR: .
+        run: dbt seed --target prod
+
+      - name: dbt run
+        working-directory: dbt_project
+        env:
+          DBT_PROFILES_DIR: .
+        run: dbt run --target prod
+
+      - name: dbt test
+        working-directory: dbt_project
+        env:
+          DBT_PROFILES_DIR: .
+        run: dbt test --target prod
