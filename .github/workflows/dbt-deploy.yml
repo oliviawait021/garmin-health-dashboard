@@ -32,7 +32,7 @@ jobs:
               prod:
                 type: postgres
                 host: ${DBT_POOLER_HOST}
-                port: 6543
+                port: 5432
                 user: postgres.zyfsiqpgscyqfstajlfm
                 password: ${DBT_PASSWORD}
                 dbname: postgres
