@@ -61,7 +61,15 @@ CREATE TABLE IF NOT EXISTS raw_garmin.steps (
     UNIQUE (steps_date)
 );
 
--- ── Manual entry table ────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS raw_garmin.calories (
+    id             BIGSERIAL PRIMARY KEY,
+    calories_date  DATE        NOT NULL,
+    raw_data       JSONB       NOT NULL,
+    ingested_at    TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (calories_date)
+);
+
+-- ── Manual entry tables ────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS raw_manual.weight (
     id           BIGSERIAL PRIMARY KEY,
@@ -72,6 +80,14 @@ CREATE TABLE IF NOT EXISTS raw_manual.weight (
     UNIQUE (weigh_date)
 );
 
+CREATE TABLE IF NOT EXISTS raw_manual.active_calories (
+    id               BIGSERIAL PRIMARY KEY,
+    entry_date       DATE           NOT NULL,
+    active_calories  INTEGER        NOT NULL,
+    entered_at       TIMESTAMPTZ    DEFAULT NOW(),
+    UNIQUE (entry_date)
+);
+
 -- ── Indexes for common query patterns ────────────────────────
 
 CREATE INDEX IF NOT EXISTS idx_daily_summary_date  ON raw_garmin.daily_summary (summary_date DESC);
@@ -80,7 +96,34 @@ CREATE INDEX IF NOT EXISTS idx_hr_date             ON raw_garmin.heart_rate     
 CREATE INDEX IF NOT EXISTS idx_stress_date         ON raw_garmin.stress         (stress_date DESC);
 CREATE INDEX IF NOT EXISTS idx_activities_date     ON raw_garmin.activities     (activity_date DESC);
 CREATE INDEX IF NOT EXISTS idx_steps_date          ON raw_garmin.steps          (steps_date DESC);
-CREATE INDEX IF NOT EXISTS idx_weight_date         ON raw_manual.weight         (weigh_date DESC);
+CREATE INDEX IF NOT EXISTS idx_calories_date       ON raw_garmin.calories       (calories_date DESC);
+CREATE INDEX IF NOT EXISTS idx_weight_date                ON raw_manual.weight          (weigh_date DESC);
+CREATE INDEX IF NOT EXISTS idx_active_calories_date       ON raw_manual.active_calories (entry_date DESC);
+
+-- ── Upsert helpers ──────────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION upsert_weight(p_date DATE, p_lbs NUMERIC, p_notes TEXT DEFAULT NULL)
+RETURNS void AS $$
+BEGIN
+  INSERT INTO raw_manual.weight (weigh_date, weight_lbs, notes)
+  VALUES (p_date, p_lbs, p_notes)
+  ON CONFLICT (weigh_date) DO UPDATE SET
+    weight_lbs = EXCLUDED.weight_lbs,
+    notes      = EXCLUDED.notes,
+    entered_at = NOW();
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION upsert_active_calories(p_date DATE, p_calories INTEGER)
+RETURNS void AS $$
+BEGIN
+  INSERT INTO raw_manual.active_calories (entry_date, active_calories)
+  VALUES (p_date, p_calories)
+  ON CONFLICT (entry_date) DO UPDATE SET
+    active_calories = EXCLUDED.active_calories,
+    entered_at      = NOW();
+END;
+$$ LANGUAGE plpgsql;
 
 SELECT schemaname, tablename 
 FROM pg_tables 

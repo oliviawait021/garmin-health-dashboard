@@ -1,11 +1,11 @@
-name: dbt CI
+name: dbt Deploy (prod)
 
 on:
-  pull_request:
+  push:
     branches: [main]
 
 jobs:
-  dbt-check:
+  deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -29,17 +29,17 @@ jobs:
           cat > profiles.yml <<EOF
           garmin_health:
             outputs:
-              dev:
+              prod:
                 type: postgres
                 host: ${DBT_POOLER_HOST}
                 port: 5432
                 user: postgres.zyfsiqpgscyqfstajlfm
                 password: ${DBT_PASSWORD}
                 dbname: postgres
-                schema: dbt_ci
+                schema: dbt_prod
                 threads: 2
                 sslmode: require
-            target: dev
+            target: prod
           EOF
 
       - name: dbt deps
@@ -48,39 +48,20 @@ jobs:
           DBT_PROFILES_DIR: .
         run: dbt deps
 
-      - name: dbt compile (syntax check)
-        working-directory: dbt_project
-        env:
-          DBT_PROFILES_DIR: .
-        run: dbt compile
-
       - name: dbt seed
         working-directory: dbt_project
         env:
           DBT_PROFILES_DIR: .
-        run: dbt seed
+        run: dbt seed --target prod
 
       - name: dbt run
         working-directory: dbt_project
         env:
           DBT_PROFILES_DIR: .
-        run: dbt run
+        run: dbt run --target prod
 
       - name: dbt test
         working-directory: dbt_project
         env:
           DBT_PROFILES_DIR: .
-        run: dbt test
-
-      - name: Cleanup CI schema
-        if: always()
-        working-directory: dbt_project
-        env:
-          DBT_PROFILES_DIR: .
-          PGPASSWORD: ${{ secrets.DBT_PASSWORD }}
-        run: |
-          psql -h ${{ secrets.DBT_HOST }} -U postgres -d postgres \
-            -c "DROP SCHEMA IF EXISTS dbt_ci CASCADE;" \
-            -c "DROP SCHEMA IF EXISTS dbt_ci_staging CASCADE;" \
-            -c "DROP SCHEMA IF EXISTS dbt_ci_intermediate CASCADE;" \
-            -c "DROP SCHEMA IF EXISTS dbt_ci_marts CASCADE;" || true
+        run: dbt test --target prod

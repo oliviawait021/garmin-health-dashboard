@@ -22,6 +22,10 @@ steps as (
     select * from {{ ref('stg_garmin__steps') }}
 ),
 
+calories as (
+    select * from {{ ref('stg_garmin__calories') }}
+),
+
 joined as (
     select
         -- Date spine from daily summary (most reliable source of dates)
@@ -32,10 +36,10 @@ joined as (
         coalesce(steps.step_goal,   daily.step_goal)        as step_goal,
         daily.total_distance_meters,
 
-        -- Calories
+        -- Calories (prefer intraday calories model; fall back to daily summary)
         daily.active_calories,
         daily.bmr_calories,
-        daily.total_calories,
+        coalesce(calories.total_calories, daily.total_calories) as total_calories,
 
         -- Heart rate
         coalesce(hr.resting_hr, daily.resting_heart_rate)   as resting_heart_rate,
@@ -72,10 +76,11 @@ joined as (
         daily.body_battery_end
 
     from daily
-    left join sleep  on sleep.sleep_date   = daily.summary_date
-    left join hr     on hr.hr_date         = daily.summary_date
-    left join stress on stress.stress_date = daily.summary_date
-    left join steps  on steps.steps_date   = daily.summary_date
+    left join sleep    on sleep.sleep_date       = daily.summary_date
+    left join hr       on hr.hr_date             = daily.summary_date
+    left join stress   on stress.stress_date     = daily.summary_date
+    left join steps    on steps.steps_date       = daily.summary_date
+    left join calories on calories.calories_date = daily.summary_date
 )
 
 select * from joined

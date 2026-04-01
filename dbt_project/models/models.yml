@@ -57,6 +57,16 @@ models:
       - name: total_steps
         description: Sum of all step counts for the day.
 
+  - name: stg_garmin__calories
+    description: Daily calorie totals derived from the intraday calories series.
+    columns:
+      - name: calories_date
+        data_tests:
+          - unique
+          - not_null
+      - name: total_calories
+        description: Sum of all calorie values for the day.
+
   - name: stg_garmin__activities
     description: Individual Garmin activities (runs, rides, walks, etc.).
     columns:

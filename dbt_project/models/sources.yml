@@ -29,6 +29,8 @@ sources:
             description: Garmin's unique identifier for the activity.
       - name: steps
         description: Step data with intraday timestamps, one row per date.
+      - name: calories
+        description: Intraday calorie burn series, one row per date.
 
   - name: raw_manual
     database: postgres
@@ -42,3 +44,10 @@ sources:
             description: The date the measurement was taken.
           - name: weight_lbs
             description: Body weight in pounds.
+      - name: active_calories
+        description: Manual active-calorie overrides entered through the dashboard.
+        columns:
+          - name: entry_date
+            description: The calendar date the override applies to.
+          - name: active_calories
+            description: Manually entered active calories burned.
