@@ -38,6 +38,7 @@ jobs:
                 dbname: postgres
                 schema: dbt_prod
                 threads: 2
+                sslmode: require
             target: prod
           EOF
 

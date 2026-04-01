@@ -38,6 +38,7 @@ jobs:
                 dbname: postgres
                 schema: dbt_ci
                 threads: 2
+                sslmode: require
             target: dev
           EOF
 
