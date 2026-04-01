@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase, DailyDashboardRow, ActivityRow, WeightTrackerRow } from '@/lib/supabase';
+import { supabase, DailyDashboardRow, ActivityRow, WeightTrackerRow, RawWeightEntry } from '@/lib/supabase';
 import DailyOverview from '@/components/DailyOverview';
 import StepsChart from '@/components/StepsChart';
 import HeartRateChart from '@/components/HeartRateChart';
@@ -15,8 +15,9 @@ import CalorieCalculator from '@/components/CalorieCalculator';
 const DAYS = 30;
 
 export default function Dashboard() {
-  const [daily, setDaily]       = useState<DailyDashboardRow[]>([]);
-  const [weight, setWeight]     = useState<WeightTrackerRow[]>([]);
+  const [daily, setDaily]           = useState<DailyDashboardRow[]>([]);
+  const [weight, setWeight]         = useState<WeightTrackerRow[]>([]);
+  const [rawWeight, setRawWeight]   = useState<RawWeightEntry[]>([]);
   const [activities, setActivities] = useState<ActivityRow[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
@@ -25,7 +26,7 @@ export default function Dashboard() {
     setLoading(true);
     setError(null);
 
-    const [dailyRes, weightRes, actRes] = await Promise.all([
+    const [dailyRes, weightRes, actRes, rawWeightRes] = await Promise.all([
       supabase
         .from('mart_daily_dashboard')
         .select('*')
@@ -41,6 +42,11 @@ export default function Dashboard() {
         .select('*')
         .order('activity_date', { ascending: false })
         .limit(50),
+      supabase
+        .from('weight_entries')
+        .select('weigh_date, weight_lbs')
+        .order('weigh_date', { ascending: true })
+        .limit(365),
     ]);
 
     if (dailyRes.error || weightRes.error || actRes.error) {
@@ -50,6 +56,10 @@ export default function Dashboard() {
       setDaily(dailyRes.data as DailyDashboardRow[]);
       setWeight(weightRes.data as WeightTrackerRow[]);
       setActivities(actRes.data as ActivityRow[]);
+    }
+    // Raw weight is best-effort — update regardless of other errors
+    if (!rawWeightRes.error && rawWeightRes.data) {
+      setRawWeight(rawWeightRes.data as RawWeightEntry[]);
     }
 
     setLoading(false);
@@ -67,7 +77,7 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Health Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Olivia's Snazzy Health Dashboard</h1>
           <p className="text-slate-500 text-sm mt-1">Powered by Garmin Connect</p>
         </div>
         <button
@@ -88,10 +98,16 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Calorie calculator — always visible, no Supabase dependency */}
+      {/* Always visible — don't depend on dbt marts */}
       <section>
-        <CalorieCalculator today={latest} />
+        <CalorieCalculator today={latest} onSaved={loadData} />
       </section>
+
+      {!loading && (
+        <section>
+          <WeightChart data={weightAsc} rawEntries={rawWeight} />
+        </section>
+      )}
 
       {!loading && !error && (
         <>
@@ -100,7 +116,7 @@ export default function Dashboard() {
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-4">
               {latest ? latest.metric_date : 'No data yet'}
             </h2>
-            <DailyOverview row={latest} />
+            <DailyOverview row={latest} onSaved={loadData} />
           </section>
 
           {/* Charts */}
@@ -109,10 +125,6 @@ export default function Dashboard() {
             <HeartRateChart data={dailyAsc} />
             <SleepChart     data={dailyAsc} />
             <StressChart    data={dailyAsc} />
-          </section>
-
-          <section>
-            <WeightChart data={weightAsc} />
           </section>
 
           {/* Activity log + weight entry side by side */}

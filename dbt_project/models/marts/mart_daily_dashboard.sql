@@ -9,6 +9,10 @@ weight as (
     select * from {{ ref('stg_manual__weight') }}
 ),
 
+manual_active_calories as (
+    select * from {{ ref('stg_manual__active_calories') }}
+),
+
 final as (
     select
         h.metric_date,
@@ -23,8 +27,8 @@ final as (
         h.total_distance_meters,
         round(h.total_distance_meters / 1609.34, 2)    as total_distance_miles,
 
-        -- Calories
-        h.active_calories,
+        -- Calories (manual override takes precedence over Garmin sync)
+        coalesce(mac.active_calories, h.active_calories) as active_calories,
         h.bmr_calories,
         h.total_calories,
 
@@ -65,7 +69,8 @@ final as (
         w.notes                                         as weight_notes
 
     from health h
-    left join weight w on w.weigh_date = h.metric_date
+    left join weight w              on w.weigh_date  = h.metric_date
+    left join manual_active_calories mac on mac.entry_date = h.metric_date
 )
 
 select * from final

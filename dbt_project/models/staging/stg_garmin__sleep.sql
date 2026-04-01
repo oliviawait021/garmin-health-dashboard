@@ -19,9 +19,9 @@ renamed as (
         )                                                                as total_sleep_hours,
 
         -- Sleep score & quality
-        (raw_data -> 'dailySleepDTO' ->> 'sleepScores' -> 'overall' ->> 'value')::int
+        ((raw_data -> 'dailySleepDTO' -> 'sleepScores' -> 'overall') ->> 'value')::int
                                                                         as sleep_score,
-        raw_data -> 'dailySleepDTO' ->> 'sleepScores' -> 'overall' ->> 'qualifierKey'
+        (raw_data -> 'dailySleepDTO' -> 'sleepScores' -> 'overall') ->> 'qualifierKey'
                                                                         as sleep_quality,
 
         -- Window
