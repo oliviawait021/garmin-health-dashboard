@@ -1,8 +1,8 @@
 name: Daily Garmin Sync
 
 on:
-  schedule:
-    - cron: '0 7 * * *'   # 7 AM UTC = midnight MST
+  # schedule:
+  #   - cron: '0 7 * * *'   # 7 AM UTC = midnight MST — disabled until Garmin rate limit clears
   workflow_dispatch: {}    # Allow manual trigger from the GitHub UI
 
 jobs:
