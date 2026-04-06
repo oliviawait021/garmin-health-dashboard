@@ -22,14 +22,27 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r ingestion/requirements.txt
 
+      - name: Restore cached Garmin tokens
+        uses: actions/cache@v4
+        with:
+          path: ~/.garmin_tokens
+          key: garmin-tokens
+
       - name: Fetch Garmin data (yesterday)
         working-directory: ingestion
         env:
           GARMIN_EMAIL:      ${{ secrets.GARMIN_EMAIL }}
           GARMIN_PASSWORD:   ${{ secrets.GARMIN_PASSWORD }}
           SUPABASE_DB_URL:   ${{ secrets.SUPABASE_DB_URL }}
-          GARMIN_TOKEN_PATH: /tmp/garmin_tokens
+          GARMIN_TOKEN_PATH: ~/.garmin_tokens
         run: python garmin_fetch.py
+
+      - name: Save Garmin tokens to cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: ~/.garmin_tokens
+          key: garmin-tokens
 
       - name: Install dbt
         run: pip install dbt-core dbt-postgres
