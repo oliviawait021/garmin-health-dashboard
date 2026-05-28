@@ -218,6 +218,51 @@ def sync_date(client: Garmin, conn, target_date: date) -> list[str]:
     return failures
 
 
+# ── Cycle sync (pulls a 30-day window around today) ───────────────────────────
+
+def sync_cycle(client: Garmin, conn) -> None:
+    """Pull menstrual cycle data for a 90-day window and upsert into raw_manual."""
+    today = date.today()
+    start = today - timedelta(days=60)
+    try:
+        data = client.get_menstrual_calendar_data(str(start), str(today))
+    except Exception as exc:
+        log.warning("cycle data unavailable: %s", exc)
+        return
+
+    summaries = data.get("cycleSummaries", [])
+    if not summaries:
+        log.info("  – cycle (no data)")
+        return
+
+    rows = []
+    for c in summaries:
+        if c.get("predictedCycle"):
+            continue  # skip Garmin's predictions — we compute our own
+        s = c["startDate"]
+        period_len = c.get("periodLength", 0)
+        end_d = str(date.fromisoformat(s) + timedelta(days=period_len - 1)) if period_len else None
+        rows.append((s, end_d))
+
+    with conn.cursor() as cur:
+        psycopg2.extras.execute_batch(cur, """
+            INSERT INTO raw_manual.menstrual_cycle (period_start, period_end)
+            VALUES (%s, %s)
+            ON CONFLICT (period_start) DO UPDATE
+                SET period_end = EXCLUDED.period_end,
+                    entered_at = NOW()
+        """, rows)
+        psycopg2.extras.execute_batch(cur, """
+            INSERT INTO public.cycle_entries (period_start, period_end)
+            VALUES (%s, %s)
+            ON CONFLICT (period_start) DO UPDATE
+                SET period_end = EXCLUDED.period_end,
+                    entered_at = NOW()
+        """, rows)
+    conn.commit()
+    log.info("  ✓ cycle (%d records)", len(rows))
+
+
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 def parse_args() -> argparse.Namespace:
@@ -250,6 +295,7 @@ def main() -> None:
         for d in dates:
             failures = sync_date(client, conn, d)
             all_failures.extend(failures)
+        sync_cycle(client, conn)
     finally:
         conn.close()
 
