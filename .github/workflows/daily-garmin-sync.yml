@@ -1,8 +1,8 @@
 name: Daily Garmin Sync
 
 on:
-  # schedule:
-  #   - cron: '0 7 * * *'   # 7 AM UTC = midnight MST — disabled until Garmin rate limit clears
+  schedule:
+    - cron: '0 7 * * *'   # 7 AM UTC = midnight MST
   workflow_dispatch: {}    # Allow manual trigger from the GitHub UI
 
 jobs:
@@ -21,6 +21,15 @@ jobs:
 
       - name: Install Python dependencies
         run: pip install -r ingestion/requirements.txt
+
+      - name: Seed Garmin tokens from secrets
+        env:
+          GARMIN_OAUTH1_TOKEN: ${{ secrets.GARMIN_OAUTH1_TOKEN }}
+          GARMIN_OAUTH2_TOKEN: ${{ secrets.GARMIN_OAUTH2_TOKEN }}
+        run: |
+          mkdir -p ~/.garmin_tokens
+          echo "$GARMIN_OAUTH1_TOKEN" | base64 -d > ~/.garmin_tokens/oauth1_token.json
+          echo "$GARMIN_OAUTH2_TOKEN" | base64 -d > ~/.garmin_tokens/oauth2_token.json
 
       - name: Restore cached Garmin tokens
         uses: actions/cache@v4
@@ -64,7 +73,7 @@ jobs:
                 user: postgres
                 password: $DBT_PASSWORD
                 dbname: postgres
-                schema: dbt_prod
+                schema: public
                 threads: 1
             target: prod
           EOF

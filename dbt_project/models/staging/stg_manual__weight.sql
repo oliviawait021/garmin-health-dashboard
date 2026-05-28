@@ -8,3 +8,5 @@ select
     notes,
     entered_at
 from source
+where weight_lbs <= 155
+  and weigh_date >= '2024-01-01'
