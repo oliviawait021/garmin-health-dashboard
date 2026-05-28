@@ -51,3 +51,14 @@ sources:
             description: The calendar date the override applies to.
           - name: active_calories
             description: Manually entered active calories burned.
+      - name: body_composition
+        description: Body composition metrics imported from Apple Health / Renpho scale.
+        columns:
+          - name: entry_date
+            description: The date the measurement was taken.
+          - name: body_fat_pct
+            description: Body fat percentage.
+          - name: bmi
+            description: Body mass index.
+          - name: lean_body_mass_lbs
+            description: Lean body mass in pounds.

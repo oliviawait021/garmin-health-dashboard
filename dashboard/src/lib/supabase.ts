@@ -37,12 +37,23 @@ export interface DailyDashboardRow {
   weight_notes:            string | null;
 }
 
+export interface RawWeightEntry {
+  weigh_date: string;
+  weight_lbs: number;
+}
+
 export interface WeightTrackerRow {
-  weigh_date:       string;
-  weight_lbs:       number;
-  weight_7d_avg:    number | null;
-  weight_30d_avg:   number | null;
-  change_vs_7d_ago: number | null;
+  weigh_date:          string;
+  weight_lbs:          number;
+  weight_7d_avg:       number | null;
+  weight_30d_avg:      number | null;
+  change_vs_7d_ago:    number | null;
+  all_time_low:        number | null;
+  all_time_high:       number | null;
+  body_fat_pct:        number | null;
+  bmi:                 number | null;
+  lean_body_mass_lbs:  number | null;
+  composition_source:  string | null;
 }
 
 export interface ActivityRow {

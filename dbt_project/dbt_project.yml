@@ -21,4 +21,4 @@ models:
       +schema: intermediate
     marts:
       +materialized: table
-      +schema: marts
+      +schema: public
