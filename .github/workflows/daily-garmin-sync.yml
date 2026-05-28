@@ -22,6 +22,12 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r ingestion/requirements.txt
 
+      - name: Restore cached Garmin tokens
+        uses: actions/cache@v4
+        with:
+          path: ~/.garmin_tokens
+          key: garmin-tokens
+
       - name: Seed Garmin tokens from secrets
         env:
           GARMIN_OAUTH1_TOKEN: ${{ secrets.GARMIN_OAUTH1_TOKEN }}
@@ -30,12 +36,6 @@ jobs:
           mkdir -p ~/.garmin_tokens
           echo "$GARMIN_OAUTH1_TOKEN" | base64 -d > ~/.garmin_tokens/oauth1_token.json
           echo "$GARMIN_OAUTH2_TOKEN" | base64 -d > ~/.garmin_tokens/oauth2_token.json
-
-      - name: Restore cached Garmin tokens
-        uses: actions/cache@v4
-        with:
-          path: ~/.garmin_tokens
-          key: garmin-tokens
 
       - name: Fetch Garmin data (yesterday)
         working-directory: ingestion

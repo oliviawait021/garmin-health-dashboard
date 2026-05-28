@@ -60,9 +60,7 @@ def get_garmin_client() -> Garmin:
             )
         raise
 
-    token_path.mkdir(parents=True, exist_ok=True)
-    import garth
-    garth.save(str(token_path))
+    client.client.dump(str(token_path))
     log.info("Session tokens saved to %s", token_path)
     return client
 
