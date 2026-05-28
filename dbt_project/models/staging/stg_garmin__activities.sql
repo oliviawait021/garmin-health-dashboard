@@ -25,9 +25,9 @@ renamed as (
         round((raw_data ->> 'distance')::numeric / 1609.34, 2)     as distance_miles,
 
         -- Effort
-        (raw_data ->> 'calories')::int                             as calories,
-        (raw_data ->> 'averageHR')::int                            as avg_hr,
-        (raw_data ->> 'maxHR')::int                                as max_hr,
+        (raw_data ->> 'calories')::numeric::int                    as calories,
+        (raw_data ->> 'averageHR')::numeric::int                   as avg_hr,
+        (raw_data ->> 'maxHR')::numeric::int                       as max_hr,
         (raw_data ->> 'averageSpeed')::numeric                     as avg_speed_ms,
 
         -- Pace in min/mile (only meaningful for running/walking)
