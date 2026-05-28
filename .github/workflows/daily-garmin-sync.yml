@@ -42,7 +42,8 @@ jobs:
         env:
           GARMIN_EMAIL:      ${{ secrets.GARMIN_EMAIL }}
           GARMIN_PASSWORD:   ${{ secrets.GARMIN_PASSWORD }}
-          SUPABASE_DB_URL:   ${{ secrets.SUPABASE_DB_URL }}
+          # Use the pooler (IPv4) — GitHub Actions runners don't support IPv6
+          SUPABASE_DB_URL:   postgresql://postgres.zyfsiqpgscyqfstajlfm:${{ secrets.DBT_PASSWORD }}@aws-1-us-east-2.pooler.supabase.com:6543/postgres
           GARMIN_TOKEN_PATH: ~/.garmin_tokens
         run: python garmin_fetch.py
 
@@ -60,7 +61,7 @@ jobs:
         working-directory: dbt_project
         env:
           DBT_PROFILES_DIR: .
-          DBT_HOST:     ${{ secrets.DBT_HOST }}
+          DBT_HOST:     ${{ secrets.DBT_POOLER_HOST }}
           DBT_PASSWORD: ${{ secrets.DBT_PASSWORD }}
         run: |
           cat > profiles.yml <<EOF
@@ -69,7 +70,7 @@ jobs:
               prod:
                 type: postgres
                 host: $DBT_HOST
-                port: 5432
+                port: 6543
                 user: postgres
                 password: $DBT_PASSWORD
                 dbname: postgres
