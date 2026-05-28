@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 
 def get_garmin_client() -> Garmin:
     """Return an authenticated Garmin client, reusing cached tokens when possible."""
-    token_path = Path(GARMIN_TOKEN_PATH)
+    token_path = Path(GARMIN_TOKEN_PATH).expanduser()
     client = Garmin()
 
     if token_path.exists():
@@ -50,9 +50,19 @@ def get_garmin_client() -> Garmin:
     except GarminConnectAuthenticationError as exc:
         log.error("Garmin authentication failed: %s", exc)
         raise
+    except Exception as exc:
+        if "429" in str(exc) or "Too Many Requests" in str(exc):
+            log.error(
+                "Garmin rate-limited this IP/account (HTTP 429).\n"
+                "  → Your cached tokens have expired and a fresh login is blocked.\n"
+                "  → Fix: run  python reauth.py  from a different network (e.g. mobile hotspot),\n"
+                "    then retry this script on your normal network."
+            )
+        raise
 
-    token_path.parent.mkdir(parents=True, exist_ok=True)
-    client.garth.dump(str(token_path))
+    token_path.mkdir(parents=True, exist_ok=True)
+    import garth
+    garth.save(str(token_path))
     log.info("Session tokens saved to %s", token_path)
     return client
 
@@ -77,10 +87,6 @@ def fetch_stress(client: Garmin, date_str: str) -> dict:
 
 def fetch_steps(client: Garmin, date_str: str) -> dict:
     return client.get_steps_data(date_str)
-
-
-def fetch_calories(client: Garmin, date_str: str) -> list[dict]:
-    return client.get_daily_calories_data(date_str)
 
 
 def fetch_activities(client: Garmin, date_str: str) -> list[dict]:
@@ -154,19 +160,6 @@ def upsert_steps(cur, date_str: str, data: dict) -> None:
     )
 
 
-def upsert_calories(cur, date_str: str, data: list) -> None:
-    cur.execute(
-        """
-        INSERT INTO raw_garmin.calories (calories_date, raw_data)
-        VALUES (%s, %s)
-        ON CONFLICT (calories_date) DO UPDATE
-            SET raw_data    = EXCLUDED.raw_data,
-                ingested_at = NOW()
-        """,
-        (date_str, json.dumps(data)),
-    )
-
-
 def upsert_activity(cur, activity: dict) -> None:
     activity_id = activity.get("activityId")
     activity_date = (activity.get("startTimeLocal") or "")[:10]
@@ -190,7 +183,6 @@ FETCHERS = [
     ("heart_rate",    fetch_heart_rate,    upsert_heart_rate),
     ("stress",        fetch_stress,        upsert_stress),
     ("steps",         fetch_steps,         upsert_steps),
-    ("calories",      fetch_calories,      upsert_calories),
 ]
 
 
