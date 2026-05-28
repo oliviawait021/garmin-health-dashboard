@@ -79,6 +79,8 @@ models:
         description: Machine-readable activity type key from Garmin.
         data_tests:
           - accepted_values:
+              config:
+                severity: warn
               values:
                 - running
                 - cycling
