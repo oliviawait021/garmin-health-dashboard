@@ -62,3 +62,8 @@ sources:
             description: Body mass index.
           - name: lean_body_mass_lbs
             description: Lean body mass in pounds.
+      - name: menstrual_cycle
+        description: Menstrual cycle entries logged through the dashboard.
+        columns:
+          - name: period_start
+            description: First day of the period.

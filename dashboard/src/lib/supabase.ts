@@ -72,6 +72,22 @@ export interface ActivityRow {
   elevation_gain_feet: number | null;
 }
 
+export interface CycleEntry {
+  id:                    number;
+  period_start:          string;
+  period_end:            string | null;
+  flow_level:            string | null;
+  symptoms:              string | null;
+  notes:                 string | null;
+  period_length_days:    number | null;
+  cycle_length_days:     number | null;
+  avg_cycle_length:      number | null;
+  avg_period_length:     number | null;
+  min_cycle_length:      number | null;
+  max_cycle_length:      number | null;
+  predicted_next_period: string | null;
+}
+
 export interface WeeklyTrendRow {
   week_start:          string;
   avg_daily_steps:     number | null;

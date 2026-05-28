@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { href: '/',            label: 'Daily' },
   { href: '/weight',      label: 'Weight' },
   { href: '/activities',  label: 'Activities' },
+  { href: '/cycle',       label: 'Cycle' },
 ];
 
 export default function NavBar() {
