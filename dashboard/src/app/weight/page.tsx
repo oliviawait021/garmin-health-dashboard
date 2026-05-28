@@ -25,6 +25,7 @@ export default function WeightPage() {
       supabase
         .from('weight_entries')
         .select('weigh_date, weight_lbs')
+        .lte('weight_lbs', 155)
         .order('weigh_date', { ascending: true })
         .limit(365),
     ]);

@@ -139,6 +139,7 @@ def upsert_weights(cur, weights: dict):
     rows = [
         (date, lbs, f"Apple Health / {source}")
         for date, (lbs, source) in sorted(weights.items())
+        if lbs <= 155  # exclude husband's data
     ]
     psycopg2.extras.execute_batch(
         cur,
