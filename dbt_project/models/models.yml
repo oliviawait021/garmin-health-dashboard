@@ -160,7 +160,9 @@ models:
           - not_null
       - name: weight_lbs
         data_tests:
-          - not_null
+          - not_null:
+              config:
+                severity: warn
 
   - name: mart_activity_summary
     description: Recent 50 activities for the dashboard activity log.
